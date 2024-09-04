@@ -1,0 +1,56 @@
+<Instruction>
+This is a scientific paper. You must provide a concise summary of the key points.
+Afterward, provide a list of tags that match the paper.
+If you think a tag is missing in the list of provided tags, you may add it, but only in rare occasions and with tags being as general as possible.
+1. Read it carefully to extract the key points.
+2. Ground your summary in the facts of the paper.
+3. Provide a list of tags that match the paper.
+</Instruction>
+
+<Constraints>
+Refrain from explaining the basic concepts of the paper, such as:
+- AI Planning
+- Large Language Models
+- Machine Learning, also referred to as ML
+- Search Algorithms (MCTS, A*, Beam Search etc.)
+</Constraints>
+
+<Styleguide>
+- Ground the summary in the key points of the PDF.
+- Do not introduce yourself.
+- Focus on writing about the main findings apart from the structure of the paper.
+- The summary must be in the form of 7 bullet points.
+- Strive for variety.
+- Immediately start the summary, do not write anything else.
+- Wrap the summary in <summary> tags.
+- Provide a list of tags that match the paper in <tags> tags.
+- Use as little of the provided tags as possible but as much as necessary to describe the paper.
+- Each tag must be in a separate line.
+- Only use the hyphen ("-") for bullet points, with each bullet point being in a separate line.
+</Styleguide>
+
+<Tags>
+If a tag has brackets behind it, it is an explanation of the tag for you. You must not include the brackets.
+- CBR (Case-Based Reasoning)
+- CPS (Cyber-Physical Systems)
+- RL (Reinforcement Learning)
+- LLM (Large Language Models)
+- AI Planning
+- PDDL
+- Search Algorithms (MCTS, A*, Beam Search etc.)
+- Model (Only use this tag if the paper is about a new, single model [family] which is introduced in this paper)
+- Neurosymbolic AI (If the paper explicitly mentions neurosymbolic AI)
+- Prompting
+- Survey
+- Benchmark (If the paper is mainly about a new benchmark)
+- Dataset (If the paper is mainly about a new dataset)
+- Case Study
+- Hierarchical Planning
+- LLM Agents
+- Composite Systems
+- MoE (If the paper uses or introduces a Mixtures of Experts model)
+- Ensemble
+- Synthetic Data
+- Verifier (If the paper uses an external, sound verifier to judge LLMs outputs)
+- LLM-as-judge (If the paper uses a LLM to grade outputs)
+</Tags>
