@@ -25,7 +25,7 @@ ZOTERO_TAGS = {
     "TODO": config.get("zotero", "todo_tag_name"),
     "SUMMARIZED": config.get("zotero", "summarized_tag_name"),
     "DENY": config.get("zotero", "deny_tag_name"),
-    "ERROR": config.get("zotero", "error_tag_name")
+    "ERROR": config.get("zotero", "error_tag_name"),
 }
 FILE_BASE_PATH = config.get("zotero", "file_path")
 CLAUDE_API_KEY = config.get("claude", "api_key")
@@ -38,7 +38,10 @@ logger = logging.getLogger("Clautero")
 def setup_logger():
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    for handler in [logging.StreamHandler(sys.stdout), logging.FileHandler("application.log")]:
+    for handler in [
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("application.log"),
+    ]:
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
@@ -54,15 +57,15 @@ def unzip_pdf(zip_file_name: str) -> Optional[str]:
 
 
 def extract_summary_and_tags(text: str) -> tuple[Optional[str], List[str]]:
-    summary_match = re.search(r'<summary>(.*?)</summary>', text, re.DOTALL)
-    tags_match = re.search(r'<tags>(.*?)</tags>', text, re.DOTALL)
+    summary_match = re.search(r"<summary>(.*?)</summary>", text, re.DOTALL)
+    tags_match = re.search(r"<tags>(.*?)</tags>", text, re.DOTALL)
     summary = summary_match.group(1).strip() if summary_match else None
     tags = []
     if tags_match:
         tag_text = tags_match.group(1).strip()
-        raw_tags = re.split(r'[,\n]+', tag_text)
+        raw_tags = re.split(r"[,\n]+", tag_text)
         for tag in raw_tags:
-            cleaned_tag = re.sub(r'^[\s•-]+', '', tag.strip())
+            cleaned_tag = re.sub(r"^[\s•-]+", "", tag.strip())
             if cleaned_tag:  # Only add non-empty tags
                 tags.append(cleaned_tag)
     return summary, tags
@@ -75,7 +78,9 @@ def write_note(parent_id: str, note_text: str) -> None:
     zot.create_items([template], parent_id)
 
 
-def update_item_tags(item_id: str, tags_to_add: List[str] = None, tags_to_remove: List[str] = None) -> None:
+def update_item_tags(
+    item_id: str, tags_to_add: List[str] = None, tags_to_remove: List[str] = None
+) -> None:
     item = zot.item(item_id)
     tags = item["data"]["tags"]
     tags = [tag for tag in tags if tag.get("tag") not in (tags_to_remove or [])]
@@ -86,7 +91,9 @@ def update_item_tags(item_id: str, tags_to_add: List[str] = None, tags_to_remove
 
 def extract_text_from_pdf(pdf_data: bytes) -> Optional[str]:
     try:
-        return "".join(page.extract_text() for page in PdfReader(BytesIO(pdf_data)).pages)
+        return "".join(
+            page.extract_text() for page in PdfReader(BytesIO(pdf_data)).pages
+        )
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {e}")
         return None
@@ -101,25 +108,11 @@ def get_summary_and_tags(pdf_path: str) -> tuple[Optional[str], List[str]]:
                 system=f.read(),
                 max_tokens=1024,
                 messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": pdf_text
-                            }
-                        ]
-                    },
+                    {"role": "user", "content": [{"type": "text", "text": pdf_text}]},
                     {
                         "role": "assistant",  # Pre-fill responses to circumvent refusals
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "<summary>"
-                            }
-                        ]
-                    }
-
+                        "content": [{"type": "text", "text": "<summary>"}],
+                    },
                 ],
                 model=MODEL_NAME,
             )
@@ -131,7 +124,14 @@ def get_summary_and_tags(pdf_path: str) -> tuple[Optional[str], List[str]]:
 
 
 def summarize_all_docs():
-    items = zot.top(tag=[ZOTERO_TAGS["TODO"], f"-{ZOTERO_TAGS["ERROR"]}", f"-{ZOTERO_TAGS["DENY"]}"], limit=50)
+    items = zot.top(
+        tag=[
+            ZOTERO_TAGS["TODO"],
+            f"-{ZOTERO_TAGS["ERROR"]}",
+            f"-{ZOTERO_TAGS["DENY"]}",
+        ],
+        limit=50,
+    )
     logger.info(f"Found {len(items)} items to summarize")
 
     for item in items:
@@ -141,8 +141,11 @@ def summarize_all_docs():
             update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
             continue
 
-        pdf_items = [child for child in zot.children(key)
-                     if child.get("data", {}).get("contentType") == "application/pdf"]
+        pdf_items = [
+            child
+            for child in zot.children(key)
+            if child.get("data", {}).get("contentType") == "application/pdf"
+        ]
         if not pdf_items:
             logger.error(f"No PDF attachment found for item {key}, skipping.")
             update_item_tags(key, tags_to_add=[ZOTERO_TAGS["DENY"]])
@@ -157,7 +160,11 @@ def summarize_all_docs():
         pdf_reader = PdfReader(pdf_path)
         if not 5 <= len(pdf_reader.pages) <= 100:
             logger.error("PDF length is out of bounds, skipping.")
-            update_item_tags(key, tags_to_add=[ZOTERO_TAGS["DENY"]], tags_to_remove=[ZOTERO_TAGS["TODO"]])
+            update_item_tags(
+                key,
+                tags_to_add=[ZOTERO_TAGS["DENY"]],
+                tags_to_remove=[ZOTERO_TAGS["TODO"]],
+            )
             continue
 
         summary, tags = get_summary_and_tags(pdf_path)
@@ -167,7 +174,11 @@ def summarize_all_docs():
             continue
 
         write_note(key, f"Summary\n\n{summary}")
-        update_item_tags(key, tags_to_add=[ZOTERO_TAGS["SUMMARIZED"]] + tags, tags_to_remove=[ZOTERO_TAGS["TODO"]])
+        update_item_tags(
+            key,
+            tags_to_add=[ZOTERO_TAGS["SUMMARIZED"]] + tags,
+            tags_to_remove=[ZOTERO_TAGS["TODO"]],
+        )
 
 
 def add_missing_tags():
@@ -193,7 +204,9 @@ def summarize(background_tasks: BackgroundTasks):
 
 if __name__ == "__main__":
     setup_logger()
-    LOGGING_CONFIG["formatters"]["default"]["fmt"] = "%(asctime)s - %(levelname)s - %(message)s"
+    LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
+        "%(asctime)s - %(levelname)s - %(message)s"
+    )
     LOGGING_CONFIG["handlers"]["default"]["stream"] = sys.stdout
     LOGGING_CONFIG["loggers"]["uvicorn"] = {
         "handlers": ["default"],
