@@ -295,13 +295,9 @@ def fastapi_add_initial_tags():
 
 
 @app.get("/add_missing_tags/")
-def fastapi_add_missing_tags():
-    try:
-        add_missing_tags()
-        return {"status": "Tags added successfully!"}
-    except Exception as e:
-        logger.error(f"Error adding missing tags: {e}")
-        return {"status": "Error", "message": str(e)}
+def fastapi_add_missing_tags(background_tasks: BackgroundTasks):
+    background_tasks.add_task(add_missing_tags)
+    return {"status": "Tags added successfully!"}
 
 
 @app.get("/summarize/")
