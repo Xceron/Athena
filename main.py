@@ -1,21 +1,15 @@
 import logging
 import os
+import random
 import re
 import sys
 import tempfile
+import time
 import zipfile
 from io import BytesIO
 from pathlib import Path
 from typing import List
-import time
-import random
 
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
 import google.generativeai as genai
 import uvicorn
 from anthropic import Anthropic
@@ -24,6 +18,12 @@ from google.ai.generativelanguage_v1 import HarmCategory
 from google.generativeai.types import HarmBlockThreshold
 from pypdf import PdfReader
 from pyzotero import zotero
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 from uvicorn.config import LOGGING_CONFIG
 
 # Load configuration from environment variables
