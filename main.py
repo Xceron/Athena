@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 import re
 import sys
 import tempfile
@@ -203,7 +203,60 @@ def get_tags(pdf_path: Path, model: str) -> List[str] | None:
     return extract_tags(output) if output else None
 
 
-def summarize_all_docs() -> None:
+def summarize_and_tag_single_doc(item, do_summarize: bool = True) -> None:
+    key = item["data"]["key"]
+    logger.info(f"Handling item {key}")
+    title = item["data"].get("title")
+    if not title:
+        logger.warning(f"Skipping item {key} because it has no title")
+        update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
+        return
+
+    pdf_items = [
+        child
+        for child in zot.children(key)
+        if child.get("data", {}).get("contentType") == "application/pdf"
+    ]
+    if not pdf_items:
+        logger.error(f"No PDF attachment found for item {key}, skipping.")
+        update_item_tags(key, tags_to_add=[ZOTERO_TAGS["DENY"]])
+        return
+
+    pdf_path = unzip_pdf(Path(f"zotero/{pdf_items[0]['key']}.zip"))
+    if not pdf_path:
+        logger.error(f"Could not find a PDF for item {key} in the path, skipping.")
+        update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
+        return
+
+    pdf_reader = PdfReader(str(pdf_path))
+    if not 5 <= len(pdf_reader.pages) <= 100:
+        logger.error("PDF length is out of bounds, skipping.")
+        update_item_tags(
+            key,
+            tags_to_add=[ZOTERO_TAGS["DENY"]],
+            tags_to_remove=[ZOTERO_TAGS["TODO"]],
+        )
+        return
+
+    if do_summarize:
+        summary_model = os.getenv("SUMMARY_MODEL", "claude-3-5-sonnet-20240620")
+        summary = get_summary(pdf_path, summary_model)
+        if not summary:
+            logger.error(f"Could not summarize item {key}, skipping.")
+            update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
+            return
+        write_note(key, f"Summary\n\n{summary}")
+
+    tagging_model = os.getenv("TAG_MODEL", "claude-3-5-sonnet-20240620")
+    tags = get_tags(pdf_path, tagging_model)
+    update_item_tags(
+        key,
+        tags_to_add=[ZOTERO_TAGS["SUMMARIZED"]] + tags,
+        tags_to_remove=[ZOTERO_TAGS["TODO"]],
+    )
+
+
+def summarize_and_tag_all_docs() -> None:
     items = zot.top(
         tag=[
             ZOTERO_TAGS["TODO"],
@@ -213,56 +266,8 @@ def summarize_all_docs() -> None:
         limit=50,
     )
     logger.info(f"Found {len(items)} items to summarize")
-
     for item in items:
-        key = item["data"]["key"]
-        title = item["data"].get("title")
-        if not title:
-            logger.warning(f"Skipping item {key} because it has no title")
-            update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
-            continue
-
-        pdf_items = [
-            child
-            for child in zot.children(key)
-            if child.get("data", {}).get("contentType") == "application/pdf"
-        ]
-        if not pdf_items:
-            logger.error(f"No PDF attachment found for item {key}, skipping.")
-            update_item_tags(key, tags_to_add=[ZOTERO_TAGS["DENY"]])
-            continue
-
-        pdf_path = unzip_pdf(Path(f"zotero/{pdf_items[0]['key']}.zip"))
-        if not pdf_path:
-            logger.error(f"Could not find a PDF for item {key} in the path, skipping.")
-            update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
-            continue
-
-        pdf_reader = PdfReader(str(pdf_path))
-        if not 5 <= len(pdf_reader.pages) <= 100:
-            logger.error("PDF length is out of bounds, skipping.")
-            update_item_tags(
-                key,
-                tags_to_add=[ZOTERO_TAGS["DENY"]],
-                tags_to_remove=[ZOTERO_TAGS["TODO"]],
-            )
-            continue
-
-        tagging_model = os.getenv("TAG_MODEL", "claude-3-5-sonnet-20240620")
-        summary_model = os.getenv("SUMMARY_MODEL", "claude-3-5-sonnet-20240620")
-        summary = get_summary(pdf_path, summary_model)
-        tags = get_tags(pdf_path, tagging_model)
-        if not summary:
-            logger.error(f"Could not summarize item {key}, skipping.")
-            update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
-            continue
-
-        write_note(key, f"Summary\n\n{summary}")
-        update_item_tags(
-            key,
-            tags_to_add=[ZOTERO_TAGS["SUMMARIZED"]] + tags,
-            tags_to_remove=[ZOTERO_TAGS["TODO"]],
-        )
+        summarize_and_tag_single_doc(item, True)
 
 
 def add_initial_tags() -> None:
@@ -273,9 +278,10 @@ def add_initial_tags() -> None:
 
 def add_missing_tags() -> None:
     items = zot.top(tag=[ZOTERO_TAGS["SUMMARIZED"]], limit=50)
-    for item in items:
-        if len(item["data"]["tags"]) < 5:
-            update_item_tags(item["data"]["key"], tags_to_add=[ZOTERO_TAGS["TODO"]])
+    items_to_tag = [item for item in items if len(item["data"]["tags"]) < 5]
+    logger.info(f"Found {len(items_to_tag)} items to tag")
+    for item in items_to_tag:
+        summarize_and_tag_single_doc(item, False)
 
 
 @app.get("/add_initial_tags/")
@@ -301,7 +307,7 @@ def fastapi_add_missing_tags():
 @app.get("/summarize/")
 def summarize(background_tasks: BackgroundTasks):
     # Add to background tasks as it takes a long time
-    background_tasks.add_task(summarize_all_docs)
+    background_tasks.add_task(summarize_and_tag_all_docs)
     return {"status": "Summary started"}
 
 
