@@ -7,7 +7,15 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 from typing import List
+import time
+import random
 
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 import google.generativeai as genai
 import uvicorn
 from anthropic import Anthropic
@@ -145,17 +153,13 @@ def run_claude_prompt(
         return None
 
 
-def run_gemini_prompt(
-    pdf_path: Path, system_prompt: str, prompt: str, model_name: str
-) -> str | None:
-    google_api_key = os.getenv("GOOGLE_API_KEY")
-    if not google_api_key:
-        raise ValueError("GOOGLE_API_KEY environment variable is required.")
-    genai.configure(api_key=google_api_key)
-    model = genai.GenerativeModel(
-        model_name=model_name, system_instruction=system_prompt
-    )
-    uploaded_file = genai.upload_file(path=str(pdf_path))
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+    retry=retry_if_exception_type(Exception),
+    reraise=True,
+)
+def generate_content_with_retry(model, uploaded_file, prompt):
     try:
         response = model.generate_content(
             [uploaded_file, prompt],
@@ -169,7 +173,29 @@ def run_gemini_prompt(
         )
         return response.text
     except Exception as e:
-        logger.error(f"Error running Gemini prompt: {e}")
+        if "429" in str(e):
+            logger.warning(f"Rate limit reached. Retrying... Error: {e}")
+            time.sleep(random.uniform(0.1, 1.0))
+        raise e
+
+
+def run_gemini_prompt(
+    pdf_path: Path, system_prompt: str, prompt: str, model_name: str
+) -> str | None:
+    google_api_key = os.getenv("GOOGLE_API_KEY")
+    if not google_api_key:
+        raise ValueError("GOOGLE_API_KEY environment variable is required.")
+
+    genai.configure(api_key=google_api_key)
+    model = genai.GenerativeModel(
+        model_name=model_name, system_instruction=system_prompt
+    )
+    uploaded_file = genai.upload_file(path=str(pdf_path))
+
+    try:
+        return generate_content_with_retry(model, uploaded_file, prompt)
+    except Exception as e:
+        logger.error(f"Failed to generate content after multiple retries: {e}")
         return None
 
 
