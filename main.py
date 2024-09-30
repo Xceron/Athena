@@ -177,9 +177,7 @@ def get_summary(pdf_path: Path, model: str) -> str | None:
     system_prompt = Path("prompts/summary_system_prompt.txt").read_text()
     prompt = Path("prompts/summary_prompt.txt").read_text()
     if "claude" in model.lower():
-        output = run_claude_prompt(
-            pdf_path, system_prompt, prompt, model, "<summary>"
-        )
+        output = run_claude_prompt(pdf_path, system_prompt, prompt, model, "<summary>")
         if output:
             output = "<summary>\n" + output
     elif "gemini" in model.lower():
@@ -288,6 +286,7 @@ def fastapi_add_initial_tags():
     except Exception as e:
         logger.error(f"Error adding missing tags: {e}")
         return {"status": "Error", "message": str(e)}
+
 
 @app.get("/add_missing_tags/")
 def fastapi_add_missing_tags():
