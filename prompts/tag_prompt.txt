@@ -1,0 +1,31 @@
+Categorize the following paper.
+If you think a tag is missing, you may add it, but only in rare occasions and with tags being as general as possible.
+Wrap your tags in <tags> tags.
+Each tags must be in a separate line with each line starting with a hyphen ("-").
+
+
+<Tags>
+If a tag has brackets behind it, it is an explanation of the tag for you. You must not include the brackets.
+- CBR (Case-Based Reasoning)
+- CPS (Cyber-Physical Systems)
+- RL (Reinforcement Learning)
+- LLM (Large Language Models)
+- AI Planning
+- PDDL
+- Search Algorithms (MCTS, A*, Beam Search etc.)
+- Model (Only use this tag if the paper is about a new, single model [family] which is introduced in this paper)
+- Neurosymbolic AI (If the paper explicitly mentions neurosymbolic AI)
+- Prompting
+- Survey
+- Benchmark (If the paper is mainly about a new benchmark)
+- Dataset (If the paper is mainly about a new dataset)
+- Case Study
+- Hierarchical Planning
+- LLM Agents
+- Composite Systems
+- MoE (If the paper uses or introduces a Mixtures of Experts model)
+- Ensemble
+- Synthetic Data
+- Verifier (If the paper uses an external, sound verifier to judge LLMs outputs)
+- LLM-as-judge (If the paper uses a LLM to grade outputs)
+</Tags>

@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  athena:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      TAG_MODEL: "claude-3-5-sonnet-20240620"
+      SUMMARY_MODEL: "claude-3-5-sonnet-20240620"
+      ZOTERO_API_KEY: "${ZOTERO_API_KEY}"
+      ZOTERO_USER_ID: "${ZOTERO_USER_ID}"
+      ZOTERO_TODO_TAG_NAME: "TODO"
+      ZOTERO_SUMMARIZED_TAG_NAME: "Summary"
+      ZOTERO_DENY_TAG_NAME: "Do not summarize"
+      ZOTERO_ERROR_TAG_NAME: "ERROR"
+      CLAUDE_API_KEY: "${CLAUDE_API_KEY}"
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+    volumes:
+      - /path/to/your/zotero_folder:/app/zotero

@@ -1,17 +1,21 @@
-FROM python:3.12
-
-ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh
-RUN /install.sh && rm /install.sh
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
-COPY requirements.txt .
 
-# uv
-RUN /root/.cargo/bin/uv pip install --system --no-cache -r requirements.txt
-COPY . .
-EXPOSE 5000
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=python3.12 \
+    PYTHONPATH=/app
 
-# Python logger fix
-ENV PYTHONUNBUFFERED=1
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
 
-CMD ["python", "main.py"]
+ADD . /app
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+CMD ["uv", "run", "main.py"]

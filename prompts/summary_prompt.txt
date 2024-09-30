@@ -1,0 +1,10 @@
+Summarize the given paper.
+Ground the summary in the key points of the paper.
+The summary must be in the form of 7 bullet points.
+Strive for variety.
+Immediately start the summary, do not write anything else.
+Wrap the summary in <summary> tags.
+Provide a list of tags that match the paper in <tags> tags.
+Use as little of the provided tags as possible but as much as necessary to describe the paper.
+Each tag must be in a separate line.
+Only use the hyphen ("-") for bullet points, with each bullet point being in a separate line.
