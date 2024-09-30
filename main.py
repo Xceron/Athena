@@ -200,6 +200,7 @@ def get_tags(pdf_path: Path, model: str) -> List[str] | None:
     else:
         logger.error(f"Unsupported model: {model}")
         return None
+    logger.info(f"Got tags: {output}")
     return extract_tags(output) if output else None
 
 
