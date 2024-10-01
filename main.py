@@ -249,7 +249,7 @@ def summarize_and_tag_single_doc(item, do_summarize: bool = True) -> None:
         update_item_tags(key, tags_to_add=[ZOTERO_TAGS["DENY"]])
         return
 
-    pdf_path = unzip_pdf(Path(f"zotero/{pdf_items[0]['key']}.zip"))
+    pdf_path = unzip_pdf(Path(f"zotero/{pdf_items[0]["key"]}.zip"))
     if not pdf_path:
         logger.error(f"Could not find a PDF for item {key} in the path, skipping.")
         update_item_tags(key, tags_to_add=[ZOTERO_TAGS["ERROR"]])
@@ -287,8 +287,8 @@ def summarize_and_tag_all_docs() -> None:
     items = zot.top(
         tag=[
             ZOTERO_TAGS["TODO"],
-            f"-{ZOTERO_TAGS['ERROR']}",
-            f"-{ZOTERO_TAGS['DENY']}",
+            f"-{ZOTERO_TAGS["ERROR"]}",
+            f"-{ZOTERO_TAGS["DENY"]}",
         ],
         limit=50,
     )
@@ -304,7 +304,15 @@ def add_initial_tags() -> None:
 
 
 def add_missing_tags() -> None:
-    items = zot.top(tag=[ZOTERO_TAGS["SUMMARIZED"]], limit=50)
+    items = zot.top(
+        tag=[
+            ZOTERO_TAGS["SUMMARIZED"],
+            f"-{ZOTERO_TAGS["ERROR"]}",
+            f"-{ZOTERO_TAGS["DENY"]}",
+            f"-{ZOTERO_TAGS["TODO"]}",
+        ],
+        limit=50,
+    )
     items_to_tag = [item for item in items if len(item["data"]["tags"]) < 5]
     logger.info(f"Found {len(items_to_tag)} items to tag")
     for item in items_to_tag:

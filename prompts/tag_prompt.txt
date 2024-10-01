@@ -8,12 +8,13 @@ Each tags must be in a separate line with each line starting with a hyphen ("-")
 If a tag has brackets behind it, it is an explanation of the tag for you. You must not include the brackets.
 - CBR (Case-Based Reasoning)
 - CPS (Cyber-Physical Systems)
+- BPMN
 - RL (Reinforcement Learning)
 - LLM (Large Language Models)
-- AI Planning
+- AI Planning (If the paper explicitly mentions symbolic planning, such as PDDL, HTL, Lean or others)
 - PDDL
 - Search Algorithms (MCTS, A*, Beam Search etc.)
-- Model (Only use this tag if the paper is about a new, single model [family] which is introduced in this paper)
+- Model (Only use this tag if the paper is about a new, single model [family] which is introduced in this paper and focuses on the model itself)
 - Neurosymbolic AI (If the paper explicitly mentions neurosymbolic AI)
 - Prompting
 - Survey
