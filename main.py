@@ -10,12 +10,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import List
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types, errors
 import uvicorn
 from anthropic import Anthropic
 from fastapi import BackgroundTasks, FastAPI
-from google.ai.generativelanguage_v1 import HarmCategory
-from google.generativeai.types import HarmBlockThreshold
 from pypdf import PdfReader
 from pyzotero import zotero
 from tenacity import (
@@ -159,24 +158,57 @@ def run_claude_prompt(
     retry=retry_if_exception_type(Exception),
     reraise=True,
 )
-def generate_content_with_retry(model, uploaded_file, prompt):
+def generate_content_with_retry(
+    client: genai.Client,
+    model_name: str,
+    system_prompt: str,
+    uploaded_file: types.File,
+    prompt: str,
+):
+    """Generates content using the Google GenAI API with retry logic."""
+    # Define safety settings using the new types (string format)
+    safety_settings = [
+        types.SafetySetting(
+            category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"
+        ),
+        types.SafetySetting(
+            category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"
+        ),
+        types.SafetySetting(
+            category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"
+        ),
+        types.SafetySetting(
+            category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"
+        ),
+    ]
     try:
-        response = model.generate_content(
-            [uploaded_file, prompt],
-            request_options={"timeout": 1000},
-            safety_settings={
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            },
+        # Use client.models.generate_content with GenerateContentConfig
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[prompt, uploaded_file],
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt, safety_settings=safety_settings
+            ),
         )
+        # Assuming response.text holds the result, similar to the old API
         return response.text
+    except errors.APIError as e:
+        # Catch specific API errors first
+        # Keep existing retry logic trigger for rate limits/resource exhaustion
+        if "429" in str(e) or "Resource has been exhausted" in str(e):
+            logger.warning(
+                f"Rate limit or resource exhaustion (APIError). Retrying... Error: {e}"
+            )
+            time.sleep(random.uniform(1.0, 5.0))  # Increase sleep slightly
+            raise e  # Reraise to trigger tenacity retry
+        else:
+            # Handle other API errors (log and reraise if not retrying)
+            logger.error(f"Caught specific Google GenAI API Error: {e}")
+            raise e  # Reraise if not specifically handled for retry
     except Exception as e:
-        if "429" in str(e):
-            logger.warning(f"Rate limit reached. Retrying... Error: {e}")
-            time.sleep(random.uniform(0.1, 1.0))
-        raise e
+        # Catch any other exceptions (less specific)
+        logger.error(f"Caught generic exception during generation: {e}")
+        raise e  # Reraise to trigger tenacity retry or fail
 
 
 def run_gemini_prompt(
@@ -186,17 +218,38 @@ def run_gemini_prompt(
     if not google_api_key:
         raise ValueError("GOOGLE_API_KEY environment variable is required.")
 
-    genai.configure(api_key=google_api_key)
-    model = genai.GenerativeModel(
-        model_name=model_name, system_instruction=system_prompt
-    )
-    uploaded_file = genai.upload_file(path=str(pdf_path))
+    # Initialize the new client
+    client = genai.Client(api_key=google_api_key)
+    # Upload file using the new client method
+    uploaded_file = client.files.upload(file=str(pdf_path))
 
     try:
-        return generate_content_with_retry(model, uploaded_file, prompt)
+        # Pass the client, model_name, system_prompt, file object, and prompt
+        result = generate_content_with_retry(
+            client, model_name, system_prompt, uploaded_file, prompt
+        )
+        # Delete the uploaded file after use (optional, good practice)
+        client.files.delete(name=uploaded_file.name)
+        return result
     except Exception as e:
         logger.error(f"Failed to generate content after multiple retries: {e}")
+        # Attempt to delete the file even if generation fails
+        try:
+            client.files.delete(name=uploaded_file.name)
+        except Exception as delete_error:
+            logger.error(
+                f"Failed to delete uploaded file {uploaded_file.name}: {delete_error}"
+            )
         return None
+    finally:
+        # Ensure file deletion is attempted, wrap in try/except if not already deleted
+        try:
+            # Check if file still exists (might have been deleted in try or except block)
+            client.files.delete(name=uploaded_file.name)
+            logger.info(f"Cleaned up uploaded file: {uploaded_file.name}")
+        except Exception:
+            # Either file doesn't exist or another error occurred during cleanup
+            pass
 
 
 def get_summary(pdf_path: Path, model: str) -> str | None:
