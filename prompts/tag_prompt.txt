@@ -2,6 +2,7 @@ Categorize the following paper.
 If you think a tag is missing, you may add it, but only in rare occasions and with tags being as general as possible.
 Wrap your tags in <tags> tags.
 Each tags must be in a separate line with each line starting with a hyphen ("-").
+The information in brackets () are just for your information when to use them, do not include the info in the brackets.
 
 
 <Tags>
@@ -30,3 +31,5 @@ If a tag has brackets behind it, it is an explanation of the tag for you. You mu
 - Verifier (If the paper uses an external, sound verifier to judge LLMs outputs)
 - LLM-as-judge (If the paper uses a LLM to grade outputs)
 </Tags>
+
+Think out loud which to tags to use and why, then give me the list of tags wrapped in <tags>.
