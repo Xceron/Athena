@@ -256,10 +256,12 @@ def get_summary(pdf_path: Path, model: str) -> str | None:
     system_prompt = Path("prompts/summary_system_prompt.txt").read_text()
     prompt = Path("prompts/summary_prompt.txt").read_text()
     if "claude" in model.lower():
+        logger.info(f"Using Claude model ({model}) for summary for PDF: {pdf_path.name}")
         output = run_claude_prompt(pdf_path, system_prompt, prompt, model, "<summary>")
         if output:
             output = "<summary>\n" + output
     elif "gemini" in model.lower():
+        logger.info(f"Using Gemini model ({model}) for summary for PDF: {pdf_path.name}")
         output = run_gemini_prompt(pdf_path, system_prompt, prompt, model)
     else:
         logger.error(f"Unsupported model: {model}")
@@ -271,10 +273,12 @@ def get_tags(pdf_path: Path, model: str) -> List[str] | None:
     system_prompt = Path("prompts/tag_prompt.txt").read_text()
     prompt = Path("prompts/tag_prompt.txt").read_text()
     if "claude" in model.lower():
+        logger.info(f"Using Claude model ({model}) for tagging for PDF: {pdf_path.name}")
         output = run_claude_prompt(pdf_path, system_prompt, prompt, model, "<tags>")
         if output:
             output = "<tags>\n" + output
     elif "gemini" in model.lower():
+        logger.info(f"Using Gemini model ({model}) for tagging for PDF: {pdf_path.name}")
         output = run_gemini_prompt(pdf_path, system_prompt, prompt, model)
     else:
         logger.error(f"Unsupported model: {model}")
