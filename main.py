@@ -84,7 +84,7 @@ def extract_tags(text: str) -> List[str]:
 
 def write_note(parent_id: str, note_text: str) -> None:
     template = zot.item_template("note")
-    summary_model = os.getenv("SUMMARY_MODEL", "claude-3-5-sonnet-20240620")
+    summary_model = os.getenv("SUMMARY_MODEL", "gemini-2.5-pro-exp-03-25")
     template["tags"] = [{"tag": summary_model}, {"tag": ZOTERO_TAGS["SUMMARIZED"]}]
     template["note"] = note_text.replace("\n", "<br>")
     zot.create_items([template], parent_id)
@@ -323,7 +323,7 @@ def summarize_and_tag_single_doc(item, do_summarize: bool = True) -> None:
         return
 
     if do_summarize:
-        summary_model = os.getenv("SUMMARY_MODEL", "claude-3-5-sonnet-20240620")
+        summary_model = os.getenv("SUMMARY_MODEL", "gemini-2.5-pro-exp-03-25")
         summary = get_summary(pdf_path, summary_model)
         if not summary:
             logger.error(f"Could not summarize item {key}, skipping.")
@@ -331,7 +331,7 @@ def summarize_and_tag_single_doc(item, do_summarize: bool = True) -> None:
             return
         write_note(key, f"Summary\n\n{summary}")
 
-    tagging_model = os.getenv("TAG_MODEL", "claude-3-5-sonnet-20240620")
+    tagging_model = os.getenv("TAG_MODEL", "gemini-2.0-flash")
     tags = get_tags(pdf_path, tagging_model)
     update_item_tags(
         key,
