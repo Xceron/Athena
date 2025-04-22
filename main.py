@@ -10,11 +10,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import List
 
-from google import genai
-from google.genai import types, errors
 import uvicorn
 from anthropic import Anthropic
 from fastapi import BackgroundTasks, FastAPI
+from google import genai
+from google.genai import types, errors
 from pypdf import PdfReader
 from pyzotero import zotero
 from tenacity import (
@@ -83,11 +83,14 @@ def extract_tags(text: str) -> List[str]:
 
 
 def write_note(parent_id: str, note_text: str) -> None:
-    template = zot.item_template("note")
     summary_model = os.getenv("SUMMARY_MODEL", "gemini-2.5-pro-exp-03-25")
-    template["tags"] = [{"tag": summary_model}, {"tag": ZOTERO_TAGS["SUMMARIZED"]}]
-    template["note"] = note_text.replace("\n", "<br>")
-    zot.create_items([template], parent_id)
+    template = {
+        "itemType": "note",
+        "parentItem": parent_id,
+        "tags": [{"tag": summary_model}, {"tag": ZOTERO_TAGS["SUMMARIZED"]}],
+        "note": note_text.replace("\n", "<br>"),
+    }
+    zot.create_items([template])
 
 
 def update_item_tags(
