@@ -79,7 +79,20 @@ def extract_tags(text: str) -> List[str]:
         return []
     tag_text = match.group(1).strip()
     raw_tags = re.split(r"[,\n]+", tag_text)
-    return [re.sub(r"^[\s•-]+", "", tag.strip()) for tag in raw_tags if tag.strip()]
+    cleaned_tags = []
+    for tag in raw_tags:
+        tag = tag.strip()
+        if not tag:
+            continue
+        # Remove leading list markers
+        tag = re.sub(r"^[\\s•-]+", "", tag)
+        # Remove parenthetical explanations (e.g., " (LLM)")
+        tag = re.sub(r"\\s*\\([^)]*\\)", "", tag)
+        # Strip again to remove any remaining whitespace
+        tag = tag.strip()
+        if tag:  # Ensure the tag is not empty after processing
+            cleaned_tags.append(tag)
+    return cleaned_tags
 
 
 def write_note(parent_id: str, note_text: str) -> None:
