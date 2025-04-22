@@ -10,4 +10,5 @@ Your task is to summarize the given paper.
 - Immediately start the summary, do not write anything else.
 - Wrap the summary in <summary> tags.
 - Only use the hyphen ("-") for bullet points, with each bullet point being in a separate line.
+- The summary must be in third person ("The paper" instead of "We", "Our")
 </Formatting>
