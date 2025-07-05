@@ -1,14 +1,16 @@
-<Task>
-Your task is to summarize the given paper.
-- Ground the summary in the key points of the paper.
-- Strive for variety about 
-</Task>
+<task>
+    Your task is to generate a summary of the provided whitepaper. This summary will serve as the foundation for a subsequent discussion where you will defend the paper as its author.
+</task>
 
+<instructions>
+    - **Content**: The summary must be grounded in the paper's key findings, methodologies, and conclusions. Focus on the most critical and impactful points that an expert would find relevant.
+    - **Perspective**: For this summary *only*, write in the third person (e.g., "The paper introduces...", "The authors found..."). This objective summary will precede your first-person defense of the work.
+    - **Variety**: Ensure variety in sentence structure and how each point is introduced to make the summary engaging and not repetitive.
+    - **No Preamble**: Begin the response *directly* with the opening `<summary>` tag. Do not include any introductory phrases, text, or explanations before it.
+</instructions>
 
-<Formatting>
-- The summary must be in the form of 7 bullet points.
-- Immediately start the summary, do not write anything else.
-- Wrap the summary in <summary> tags.
-- Only use the hyphen ("-") for bullet points, with each bullet point being in a separate line.
-- The summary must be in third person ("The paper" instead of "We", "Our")
-</Formatting>
+<formatting>
+    - **Wrapper**: The entire summary must be enclosed in `<summary>` tags.
+    - **Structure**: The summary must consist of exactly seven bullet points.
+    - **Bullet Points**: Use a hyphen (`-`) for each bullet point, with each point on a new line.
+</formatting>

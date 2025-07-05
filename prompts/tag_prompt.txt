@@ -1,35 +1,51 @@
-Categorize the following paper.
-If you think a tag is missing, you may add it, but only in rare occasions and with tags being as general as possible.
-Wrap your tags in <tags> tags.
-Each tags must be in a separate line with each line starting with a hyphen ("-").
-The information in brackets () are just for your information when to use them, do not include the info in the brackets.
+<task>
+    Your primary task is to categorize the provided whitepaper by selecting a set of tags that accurately describe its **core focus and main contributions**. Avoid tagging concepts that are merely mentioned or used as part of a larger methodology unless the concept itself is central to the paper's thesis.
+</task>
 
+<process>
+    You must follow this two-step process:
 
-<Tags>
-If a tag has brackets behind it, it is an explanation of the tag for you. You must not include the brackets.
-- CBR (Case-Based Reasoning)
-- CPS (Cyber-Physical Systems)
+    1.  **Reasoning**: First, analyze the paper's abstract, introduction, and conclusion to identify its primary subject matter and core contributions. Think step-by-step through the available tags. For each tag you select, write a brief justification for why it applies, explaining how it relates to the paper's main focus. For tags you considered but rejected (e.g., "MoE" for a paper that only uses an MoE model), briefly explain why it wasn't a primary focus. This entire process must be wrapped in `<reasoning>` tags.
+
+    2.  **Tagging**: Second, after the reasoning block, provide the final list of chosen tags. This list must be wrapped in `<tags>` tags.
+</process>
+
+<limits>
+    - Emit at most **four** tags.
+    - Add a new tag only in the rare case that none of the existing tags can capture an essential, central topic of the paper.
+    - Prefer the most general applicable tag; avoid synonyms or finer-grained variants.
+</limits>
+
+<definitions>
+- CBR              <!-- Case-Based Reasoning -->
+- CPS              <!-- Cyber-Physical Systems -->
 - BPMN
-- RL (Reinforcement Learning)
-- LLM (Large Language Models)
-- AI Planning (If the paper explicitly mentions symbolic planning, such as PDDL, HTL, Lean or others)
+- RL               <!-- Reinforcement Learning -->
+- LLM              <!-- Large Language Models -->
+- AI Planning      <!-- Symbolic planning: PDDL, HTN, Lean, etc. -->
 - PDDL
-- Search Algorithms (MCTS, A*, Beam Search etc.)
-- Model (Only use this tag if the paper is about a new, single model [family] which is introduced in this paper and focuses on the model itself)
-- Neurosymbolic AI (If the paper explicitly mentions neurosymbolic AI)
+- Search Algorithms<!-- MCTS, A*, Beam Search, etc. -->
+- Model            <!-- A new model / model family is the main contribution -->
+- Neurosymbolic AI
 - Prompting
 - Survey
-- Benchmark (If the paper is mainly about a new benchmark)
-- Dataset (If the paper is mainly about a new dataset)
+- Benchmark        <!-- Mainly about a new benchmark -->
+- Dataset          <!-- Mainly about a new dataset -->
 - Case Study
 - Hierarchical Planning
 - LLM Agents
 - Composite Systems
-- MoE (If the paper uses or introduces a Mixtures of Experts model)
+- MoE              <!-- Central focus on Mixture-of-Experts -->
 - Ensemble
 - Synthetic Data
-- Verifier (If the paper uses an external, sound verifier to judge LLMs outputs)
-- LLM-as-judge (If the paper uses a LLM to grade outputs)
-</Tags>
+- Verifier         <!-- Uses an external, sound verifier for LLM output -->
+- LLM-as-judge     <!-- Uses an LLM to grade outputs -->
+</definitions>
 
-Think out loud which to tags to use and why, then give me the list of tags wrapped in <tags>.
+<formatting>
+    - Start with the `<reasoning>` block.
+    - Follow it immediately with the final `<tags>` block.
+    - Inside `<tags>`, each tag must be on a new line and start with a hyphen (`-`).
+    - Do not include the explanatory text from the definitions in the final output.
+    - Do not add new tags, unless it is so important and general that it deserves ists own tag.
+</formatting>
